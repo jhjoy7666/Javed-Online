@@ -19,6 +19,7 @@ import {
   ChevronRight,
   ShieldCheck,
   AlertCircle,
+  CheckCircle,
   Clock,
   ExternalLink,
   ChevronLeft
@@ -117,9 +118,19 @@ const ResultCard = ({ entry, onDelete }: { entry: PassportEntry, onDelete?: () =
   return (
     <motion.div 
       layout
+      initial={false}
+      animate={{ 
+        scale: highlight ? 1.02 : 1,
+        opacity: highlight ? 0.9 : 1,
+      }}
+      transition={{ 
+        type: "spring", 
+        stiffness: 300, 
+        damping: 20 
+      }}
       className={cn(
-        "applicant-result-box bg-white border border-[#d0d5dd] rounded-xl overflow-hidden shadow-sm transition-all mb-4",
-        highlight && "ring-4 ring-[#067647]/20 border-[#067647] scale-[1.01]"
+        "applicant-result-box bg-white border border-[#d0d5dd] rounded-xl overflow-hidden shadow-sm transition-all mb-4 relative z-10",
+        highlight && "ring-4 ring-[#067647]/20 border-[#067647] shadow-lg z-20"
       )}
     >
       <div className={cn("applicant-result-top px-4 py-3 flex items-center justify-between", config.bgColor)}>
@@ -215,9 +226,14 @@ export default function App() {
   const [newOccupation, setNewOccupation] = useState('');
   const [newNationality, setNewNationality] = useState('BGD');
   const [formErrors, setFormErrors] = useState<{ passport?: string, occupation?: string }>({});
+  const [feedback, setFeedback] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   // Interval for auto-check
   const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // State for pull to refresh
+  const [pullProgress, setPullProgress] = useState(0);
+  const mainScrollRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -427,10 +443,17 @@ export default function App() {
         setNewOccupation('');
         setNewNationality('BGD');
         setFormErrors({});
+        setFeedback({ message: 'Passport added successfully!', type: 'success' });
+        setTimeout(() => setFeedback(null), 3000);
         setActiveTab('results');
       } catch (error) {
+        setFeedback({ message: 'Failed to save to database. Please try again.', type: 'error' });
+        setTimeout(() => setFeedback(null), 5000);
         handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/passports`);
       }
+    } else {
+      setFeedback({ message: 'Could not find results for this passport. Check your details.', type: 'error' });
+      setTimeout(() => setFeedback(null), 5000);
     }
     setIsRefreshing(false);
   };
@@ -589,7 +612,30 @@ export default function App() {
           <RefreshCcw size={18} />
         </button>
       </header>      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-4 pb-24">
+      <main 
+        ref={mainScrollRef}
+        className="flex-1 overflow-y-auto p-4 pb-24 relative"
+      >
+        {/* Toast Feedback */}
+        <AnimatePresence>
+          {feedback && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 10 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="absolute top-0 left-4 right-4 z-50 pointer-events-none"
+            >
+              <div className={cn(
+                "p-3 rounded-xl shadow-lg border flex items-center gap-2",
+                feedback.type === 'success' ? "bg-[#ecfdf3] border-[#abefc6] text-[#067647]" : "bg-[#fef3f2] border-[#fee4e2] text-[#b42318]"
+              )}>
+                {feedback.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+                <span className="text-[13px] font-semibold">{feedback.message}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence mode="wait">
           {activeTab === 'results' && (
             <motion.div 
@@ -597,8 +643,50 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="space-y-4"
+              className="space-y-4 pt-4"
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.6}
+              onDrag={(e, info) => {
+                // Only allow pulling down if at the top of the scroll
+                if (mainScrollRef.current && mainScrollRef.current.scrollTop <= 0) {
+                  const y = info.offset.y;
+                  if (y > 0) {
+                    setPullProgress(Math.min(y / 100, 1.2));
+                  }
+                }
+              }}
+              onDragEnd={(e, info) => {
+                if (info.offset.y > 100 && !isRefreshing) {
+                  refreshAllResults();
+                }
+                setPullProgress(0);
+              }}
             >
+              {/* Pull to Refresh Indicator */}
+              <div 
+                className="absolute left-0 right-0 -top-8 flex justify-center pointer-events-none"
+                style={{ 
+                  transform: `translateY(${pullProgress * 60}px)`,
+                  opacity: pullProgress
+                }}
+              >
+                <div className="bg-white p-2 rounded-full shadow-lg border border-gray-100">
+                  <RefreshCcw 
+                    size={16} 
+                    className={cn(
+                      "text-[#067647]", 
+                      pullProgress >= 1 ? "rotate-180" : "",
+                      isRefreshing && "animate-spin"
+                    )}
+                    style={{ 
+                      transition: 'transform 0.2s ease',
+                      transform: !isRefreshing ? `rotate(${pullProgress * 360}deg)` : undefined
+                    }}
+                  />
+                </div>
+              </div>
+
               <div className="flex items-center justify-between mb-2">
                 <div className="flex flex-col">
                   <h2 className="text-[11px] font-bold text-[#475467] uppercase tracking-widest pl-1">Saved Results ({passports.length})</h2>

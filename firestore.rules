@@ -62,7 +62,8 @@ service cloud.firestore {
         (!('occupationName' in data) || data.occupationName is string) &&
         (!('applicantName' in data) || data.applicantName is string) &&
         (!('examDate' in data) || data.examDate is string) &&
-        (!('testCenter' in data) || data.testCenter is string);
+        (!('testCenter' in data) || data.testCenter is string) &&
+        (!('lastUpdated' in data) || data.lastUpdated is string);
     }
 
     // ===============================================================
