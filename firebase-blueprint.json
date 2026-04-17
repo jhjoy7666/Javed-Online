@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User preferences and configuration for Telegram notifications and auto-check.",
+      "type": "object",
+      "properties": {
+        "telegramBotToken": {
+          "type": "string",
+          "description": "Telegram Bot Token for notifications."
+        },
+        "telegramChatId": {
+          "type": "string",
+          "description": "Telegram Chat ID for notifications."
+        },
+        "autoCheckEnabled": {
+          "type": "boolean",
+          "description": "Whether real-time automatic checking is enabled."
+        }
+      }
+    },
+    "PassportEntry": {
+      "title": "Passport Entry",
+      "description": "A passport entry to track results for.",
+      "type": "object",
+      "properties": {
+        "passportNumber": {
+          "type": "string",
+          "description": "The passport number."
+        },
+        "occupationCode": {
+          "type": "string",
+          "description": "The occupation code."
+        },
+        "occupationName": {
+          "type": "string",
+          "description": "The occupation name."
+        },
+        "nationalityId": {
+          "type": "string",
+          "description": "The nationality ID (usually BGD)."
+        },
+        "lastStatus": {
+          "type": "string",
+          "description": "The last known exam result status.",
+          "enum": ["Pending", "Passed", "Failed", "Unknown"]
+        },
+        "applicantName": {
+          "type": "string"
+        },
+        "examDate": {
+          "type": "string"
+        },
+        "testCenter": {
+          "type": "string"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["passportNumber", "occupationCode", "nationalityId"]
+    },
+    "HistoryEntry": {
+      "title": "History Entry",
+      "description": "History of status changes for a passport.",
+      "type": "object",
+      "properties": {
+        "passportNumber": {
+          "type": "string"
+        },
+        "oldStatus": {
+          "type": "string"
+        },
+        "newStatus": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "Stores user-specific settings."
+    },
+    "/users/{uid}/passports/{passportId}": {
+      "schema": "PassportEntry",
+      "description": "The list of passports being tracked by the user."
+    },
+    "/users/{uid}/history/{historyId}": {
+      "schema": "HistoryEntry",
+      "description": "History of status changes for this user's passports."
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "JAVED ONLINE",
+  "short_name": "JAVED",
+  "description": "Labour Exam Result Tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F9FAFB",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/javed/192/192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://picsum.photos/seed/javed/512/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
