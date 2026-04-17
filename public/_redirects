@@ -1,0 +1,10 @@
+# Netlify Redirects for SPA and API Proxies
+
+# Proxy for Occupations API
+/api/proxy/occupations  https://svp-international-api.pacc.sa/api/v1/visitor_space/occupations  200
+
+# Proxy for Results API
+/api/proxy/results  https://svp-international-api.pacc.sa/api/v1/visitor_space/labors  200
+
+# Handle SPA routing
+/*  /index.html  200

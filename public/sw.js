@@ -2,8 +2,7 @@ const CACHE_NAME = 'javed-online-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/main.tsx',
-  '/firebase-applet-config.json'
+  '/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {

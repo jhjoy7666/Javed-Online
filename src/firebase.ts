@@ -3,10 +3,12 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, query, getDoc, getDocs, updateDoc, deleteDoc, Timestamp, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
+console.log("Firebase initializing with Project ID:", firebaseConfig.projectId);
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
+console.log("Firebase initialized successfully");
 
 // Custom sign in with popup
 export const signInWithGoogle = async () => {
@@ -82,5 +84,9 @@ async function testConnection() {
       console.error("Please check your Firebase configuration. The client is offline.");
     }
   }
+}
+// Register connection test
+if (process.env.NODE_ENV === 'production') {
+  console.log("Production environment detected: testing Firestore connection...");
 }
 testConnection();
