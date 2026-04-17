@@ -15,5 +15,5 @@ export const fetchAllOccupations = async () => {
   }
 };
 
-export const TELEGRAM_BOT_TOKEN = "8583836114:AAEYhgFkIaJ-OKLfqIdHWKWQnCINCTzbqM4";
-export const TELEGRAM_CHAT_ID = "7613887768";
+export const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "";
+export const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID || "";

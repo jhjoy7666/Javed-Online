@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, query, getDoc, getDocs, updateDoc, deleteDoc, Timestamp, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -10,16 +10,18 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
 console.log("Firebase initialized successfully");
 
-// Custom sign in with popup
+// Sign in with redirect (preferred for mobile/PWAs)
 export const signInWithGoogle = async () => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    await signInWithRedirect(auth, googleProvider);
   } catch (error) {
-    console.error("Error signing in with Google:", error);
+    console.error("Error initiating Google Redirect sign in:", error);
     throw error;
   }
 };
+
+// Check redirect result on app load
+export const checkRedirectResult = () => getRedirectResult(auth);
 
 export const logout = () => signOut(auth);
 
@@ -86,7 +88,7 @@ async function testConnection() {
   }
 }
 // Register connection test
-if (process.env.NODE_ENV === 'production') {
+if (import.meta.env.PROD) {
   console.log("Production environment detected: testing Firestore connection...");
 }
 testConnection();

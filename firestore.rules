@@ -42,28 +42,44 @@ service cloud.firestore {
     
     function isAdmin() {
       return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
           (request.auth.token.email == "javedonlinecentre.bd@gmail.com" && request.auth.token.email_verified == true));
     }
 
     function isValidUser(data) {
       return data.keys().hasOnly(['telegramBotToken', 'telegramChatId', 'autoCheckEnabled', 'role']) &&
-        (!('telegramBotToken' in data) || (data.telegramBotToken is string && data.telegramBotToken.size() < 200)) &&
-        (!('telegramChatId' in data) || (data.telegramChatId is string && data.telegramChatId.size() < 100)) &&
-        (!('autoCheckEnabled' in data) || data.autoCheckEnabled is bool);
+        (!('telegramBotToken' in data) || (data.telegramBotToken is string && data.telegramBotToken.size() > 0 && data.telegramBotToken.size() < 200)) &&
+        (!('telegramChatId' in data) || (data.telegramChatId is string && data.telegramChatId.size() > 0 && data.telegramChatId.size() < 100)) &&
+        (!('autoCheckEnabled' in data) || data.autoCheckEnabled is bool) &&
+        (!('role' in data) || data.role == 'user'); // prevent self-elevation to admin
     }
 
     function isValidPassport(data) {
-      return data.keys().hasAll(['passportNumber', 'occupationCode', 'nationalityId']) &&
-        data.passportNumber is string && data.passportNumber.size() < 20 &&
-        data.occupationCode is string && data.occupationCode.size() < 20 &&
-        data.nationalityId is string && data.nationalityId.size() == 3 &&
-        (!('lastStatus' in data) || data.lastStatus in ['Pending', 'Passed', 'Failed', 'Unknown']) &&
-        (!('occupationName' in data) || data.occupationName is string) &&
-        (!('applicantName' in data) || data.applicantName is string) &&
-        (!('examDate' in data) || data.examDate is string) &&
-        (!('testCenter' in data) || data.testCenter is string) &&
-        (!('lastUpdated' in data) || data.lastUpdated is string);
+      let requiredFields = ['passportNumber', 'occupationCode', 'nationalityId'];
+      let allowedFields = ['passportNumber', 'occupationCode', 'occupationName', 'nationalityId', 'lastStatus', 'applicantName', 'examDate', 'testCenter', 'lastUpdated'];
+      
+      return data.keys().hasAll(requiredFields) &&
+        data.keys().hasOnly(allowedFields) &&
+        data.passportNumber is string && data.passportNumber.size() >= 6 && data.passportNumber.size() <= 20 &&
+        data.occupationCode is string && data.occupationCode.size() >= 5 && data.occupationCode.size() <= 20 &&
+        data.nationalityId is string && data.nationalityId.size() >= 2 && data.nationalityId.size() <= 3 &&
+        (!('lastStatus' in data) || (data.lastStatus in ['Pending', 'Passed', 'Failed', 'Unknown'])) &&
+        (!('occupationName' in data) || (data.occupationName is string && data.occupationName.size() < 100)) &&
+        (!('applicantName' in data) || (data.applicantName is string && data.applicantName.size() < 100)) &&
+        (!('examDate' in data) || (data.examDate is string && data.examDate.size() < 20)) &&
+        (!('testCenter' in data) || (data.testCenter is string && data.testCenter.size() < 150)) &&
+        (!('lastUpdated' in data) || (data.lastUpdated is string && data.lastUpdated.size() < 50));
+    }
+
+    function isValidHistory(data) {
+      let requiredFields = ['passportNumber', 'oldStatus', 'newStatus', 'timestamp'];
+      return data.keys().hasAll(requiredFields) &&
+        data.keys().hasOnly(requiredFields) &&
+        data.passportNumber is string && data.passportNumber.size() <= 20 &&
+        data.oldStatus is string && data.oldStatus.size() <= 20 &&
+        data.newStatus is string && data.newStatus.size() <= 20 &&
+        data.timestamp is timestamp;
     }
 
     // ===============================================================
@@ -83,7 +99,7 @@ service cloud.firestore {
 
       match /history/{historyId} {
         allow read: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidHistory(request.resource.data);
       }
     }
 
