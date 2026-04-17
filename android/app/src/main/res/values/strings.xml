@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Javed Online</string>
+    <string name="title_activity_main">Javed Online</string>
+    <string name="package_name">com.javed.online</string>
+    <string name="custom_url_scheme">com.javed.online</string>
+</resources>
