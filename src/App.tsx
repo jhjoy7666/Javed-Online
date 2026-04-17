@@ -296,16 +296,21 @@ export default function App() {
   }, [user, prefs.autoCheckEnabled, passports.length]);
 
   const sendTelegramNotification = async (entry: PassportEntry, newStatus: string) => {
-    const token = prefs.telegramBotToken || TELEGRAM_BOT_TOKEN;
-    const chatId = prefs.telegramChatId || TELEGRAM_CHAT_ID;
+    const token = prefs.telegramBotToken;
+    const chatId = prefs.telegramChatId;
     
-    if (!token || !chatId) return;
+    // Explicit validation for empty configuration
+    if (!token || !chatId || token.trim() === '' || chatId.trim() === '') {
+      console.warn("Telegram notification skipped: Bot Token or Chat ID is missing.");
+      return;
+    }
 
     const message = `
-Passport: ${entry.passportNumber}
-Status Changed: ${newStatus}
-Exam Date: ${entry.examDate}
-Center: ${entry.testCenter}
+<b>Javed Online Result Update</b>
+<b>Passport:</b> ${entry.passportNumber}
+<b>Status Changed:</b> ${newStatus}
+<b>Exam Date:</b> ${entry.examDate}
+<b>Center:</b> ${entry.testCenter}
     `.trim();
 
     try {
@@ -820,12 +825,26 @@ Center: ${entry.testCenter}
                 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 border-t border-[#f2f4f7] pt-4">
-                    <span className="text-[13px] font-semibold text-[#475467]">Frequent Auto-Check</span>
+                    <div className="flex flex-col">
+                      <span className="text-[13px] font-semibold text-[#475467]">Frequent Auto-Check</span>
+                      {(!prefs.telegramBotToken || !prefs.telegramChatId) && (
+                        <span className="text-[9px] text-amber-600 font-bold uppercase mt-1 flex items-center gap-1">
+                          <AlertCircle size={10} /> Needs Config
+                        </span>
+                      )}
+                    </div>
                     <button 
-                      onClick={() => updatePreference('autoCheckEnabled', !prefs.autoCheckEnabled)}
+                      onClick={() => {
+                        if (!prefs.telegramBotToken || !prefs.telegramChatId) {
+                          // Visual feedback is provided by the input fields highlighting
+                          return;
+                        }
+                        updatePreference('autoCheckEnabled', !prefs.autoCheckEnabled);
+                      }}
                       className={cn(
                         "w-10 h-5 rounded-full p-0.5 transition-all duration-300 relative",
-                        prefs.autoCheckEnabled ? "bg-[#067647]" : "bg-[#ccc]"
+                        prefs.autoCheckEnabled ? "bg-[#067647]" : "bg-[#ccc]",
+                        (!prefs.telegramBotToken || !prefs.telegramChatId) && "opacity-50 cursor-not-allowed"
                       )}
                     >
                       <div className={cn(
@@ -848,9 +867,12 @@ Center: ${entry.testCenter}
                     <label className="block text-[11px] font-bold text-[#475467] uppercase mb-1 ml-1">Bot Token</label>
                     <input 
                       type="password"
-                      className="w-full bg-white border border-[#d0d5dd] rounded-lg p-2.5 text-xs font-mono focus:ring-2 focus:ring-[#067647]/20 outline-none"
+                      className={cn(
+                        "w-full bg-white border rounded-lg p-2.5 text-xs font-mono focus:ring-2 outline-none transition-all",
+                        prefs.telegramBotToken ? "border-[#d0d5dd] focus:ring-[#067647]/20" : "border-amber-300 bg-amber-50/10 focus:ring-amber-200"
+                      )}
                       value={prefs.telegramBotToken || ''}
-                      placeholder={TELEGRAM_BOT_TOKEN}
+                      placeholder="Required for notifications"
                       onChange={(e) => updatePreference('telegramBotToken', e.target.value)}
                     />
                   </div>
@@ -858,12 +880,23 @@ Center: ${entry.testCenter}
                     <label className="block text-[11px] font-bold text-[#475467] uppercase mb-1 ml-1">Chat ID</label>
                     <input 
                       type="text"
-                      className="w-full bg-white border border-[#d0d5dd] rounded-lg p-2.5 text-xs font-mono focus:ring-2 focus:ring-[#067647]/20 outline-none"
+                      className={cn(
+                        "w-full bg-white border rounded-lg p-2.5 text-xs font-mono focus:ring-2 outline-none transition-all",
+                        prefs.telegramChatId ? "border-[#d0d5dd] focus:ring-[#067647]/20" : "border-amber-300 bg-amber-50/10 focus:ring-amber-200"
+                      )}
                       value={prefs.telegramChatId || ''}
-                      placeholder={TELEGRAM_CHAT_ID}
+                      placeholder="Required for notifications"
                       onChange={(e) => updatePreference('telegramChatId', e.target.value)}
                     />
                   </div>
+                  {(!prefs.telegramBotToken || !prefs.telegramChatId) && (
+                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-3">
+                      <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={14} />
+                      <p className="text-[10px] text-amber-800 leading-relaxed font-medium">
+                        Please provide your Bot Token and Chat ID to enable automated background results checking and notifications.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -5,6 +5,20 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# Proxy API requests to bypass CORS on Netlify
+[[redirects]]
+  from = "/api/proxy/occupations"
+  to = "https://svp-international-api.pacc.sa/api/v1/visitor_space/occupations"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/proxy/results"
+  to = "https://svp-international-api.pacc.sa/api/v1/visitor_space/labors"
+  status = 200
+  force = true
+
+# SPA Redirect for React Router
 [[redirects]]
   from = "/*"
   to = "/index.html"
